@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+  </head>
+  <body>
+    <div class="container">
+      <div class="present_weather">
+        <div class="present_location" id="present_location"></div>
+        <div class="present_status_icon" id="present_status_icon">
+          <img src="" id="weather_icon"/>
+        </div>
+        <div class="present_status_txt" id="present_status_txt"></div>
+        <div class="present_status">
+          <div class="present_temparature" id="present_temparature"></div>
+          <div class="present_humidity" id="present_humidity"></div>
+          <div class="present_wind" id="present_wind"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="weekly_weather_container" id="weekly_weather_container">
+
+    </div>
+
+  <script>
+    var latitude;
+    var longitude;
+    var region_req;
+    var nx;
+    var ny;
+    var ServiceKey = 'yYPHz3kU6nqWqqIXnS74yw%2FuanN1EKm5N%2B4oq39t8k9if5LzMqj2vuj%2BN6TStqeOQhECcKDRmY5sT2GYZecNRQ%3D%3D';
+    var pageNo = '1';
+    var numOfRows = '10';
+    var dataType = 'JSON';
+    var date = new Date();
+    var region_id;
+
+    var year = date.getFullYear();
+    var month = date.getMonth()+1;
+
+    const weekly_weather_container = document.getElementById('weekly_weather_container');
+
+    if(month<10){
+      month = '0'+month;
+    }
+    var today = date.getDate();
+
+    if(today<10){
+      today = '0'+today;
+    }
+
+    var base_date = year+month+today;
+
+    var base_time = date.getHours();
+    var minute = date.getMinutes();
+    if(minute<41){
+      base_time = base_time-1;
+    }
+
+    if(base_time<10){
+      base_time = '0'+base_time;
+    }
+    base_time = base_time + '00';
+
+    function getPosition() {
+      // Simple wrapper
+      return new Promise((res, rej) => {
+        navigator.geolocation.getCurrentPosition(res, rej);
+      });
+    }
+
+
+
+    async function pos_result() {
+      var position = await getPosition();  // wait for getPosition to complete
+//      console.log(position.coords.latitude, position.coords.longitude)
+      latitude = position.coords.latitude;
+      longitude = position.coords.longitude;
+
+      region_req = {lat:latitude, long:longitude};
+      return region_req;
+    }
+
+
+    async function check_region(){
+
+      var region_req = await pos_result();
+
+      const res = await fetch("/check_region", {method: "POST",
+        headers: {"Content-Type": "application/json",},
+        body: JSON.stringify(region_req)})
+
+      return await res.json();
+
+      // return res;
+    }
+
+    check_region().then(res => {
+      nx = res.nx;
+      ny = res.ny;
+
+      console.log(res.region_id);
+      region_id = res.region_id;
+      var region = res.시 +' '+ res.구 + ' '+ res.지역명;
+      const present_location = document.getElementById('present_location');
+      present_location.innerText = region;
+      var current_weather_req = 'https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst?serviceKey='+ServiceKey+'&pageNo='+pageNo+'&numOfRows='+numOfRows+'&dataType='+dataType+'&base_date='+base_date+'&base_time='+base_time+'&nx='+nx+'&ny='+ny;
+      var img_src = '/images/icons/';
+              fetch(current_weather_req).then(res => res.json())
+              .then(data => data.response.body)
+              .then(data => data.items.item)
+              .then(data => {for(var i=0; i<data.length; i++){
+
+                        if(data[i].category=='T1H'){
+                          const present_temparature = document.getElementById('present_temparature');
+                          present_temparature.innerText=data[i].obsrValue +'°';
+                        }else if(data[i].category=='RN1'){
+                          console.log('1시간 강수량 : ',data[i].obsrValue);
+                        }else if(data[i].category=='UUU'){
+                          console.log('동서바람성분 : ',data[i].obsrValue);
+                        }else if(data[i].category=='VVV'){
+                          console.log('남북바람성분 : ',data[i].obsrValue);
+                        }else if(data[i].category=='REH'){
+                          console.log('습도 : ',data[i].obsrValue);
+                          const present_humidity = document.getElementById('present_humidity');
+                          present_humidity.innerText = '습도 : ' + data[i].obsrValue + '%';
+                        }else if(data[i].category=='PTY'){
+                          console.log('강수형태 : ',data[i].obsrValue);
+                          var present_status = '';
+                          const present_status_txt = document.getElementById('present_status_txt');
+                          if(data[i].obsrValue==0){
+                            present_status = '맑음';
+                            if(date.getHours()<=5){
+                              img_src = img_src+'full_moon.png'
+                            }else if(20<=date.getHours()){
+                              img_src = img_src+'full_moon.png'
+                            }else{
+                              img_src = img_src+'sunny.png'
+                            }
+                          }else if(data[i].obsrValue==1){
+                            console.log('비');
+                            img_src = img_src+'heavy_rain.png'
+                            present_status = '비';
+                          }else if(data[i].obsrValue==2){
+                            console.log('눈');
+                            img_src = img_src+'snow.png'
+                            present_status = '눈';
+                          }else if(data[i].obsrValue==3){
+                            console.log('빗방울');
+                            img_src = img_src+'light_rain.png'
+                            present_status = '빗방울';
+                          }else if(data[i].obsrValue==5){
+                            console.log('빗방울 눈날림');
+                            img_src = img_src+'rain_snow.png'
+                            present_status = '눈, 비 날림';
+                          }else if(data[i].obsrValue==6){
+                            img_src = img_src+'snow.png'
+                            present_status = '눈날림';
+                          }
+                          present_status_txt.innerText = present_status;
+                        }else if(data[i].category=='VEC'){
+                          console.log('풍향 : ',data[i].obsrValue);
+                          var wind_direction = '';
+                          if(data[i].obsrValue<=45){
+                            console.log('북북동');
+                            wind_direction = '북북동';
+                          }else if(data[i].obsrValue<=90){
+                            console.log('동북동');
+                            wind_direction = '동북동';
+                          }else if(data[i].obsrValue<=135){
+                            console.log('동남동');
+                            wind_direction = '동남동';
+                          }else if(data[i].obsrValue<=180){
+                            console.log('남남동');
+                            wind_direction = '남남동';
+                          }else if(data[i].obsrValue<=225){
+                            console.log('남남서');
+                            wind_direction = '남남서';
+                          }else if(data[i].obsrValue<=270){
+                            console.log('서남서');
+                            wind_direction = '서남서';
+                          }else if(data[i].obsrValue<=315){
+                            console.log('서북서');
+                            wind_direction = '서북서';
+                          }else if(data[i].obsrValue<=360){
+                            console.log('북북서');
+                            wind_direction = '북북서';
+                          }
+
+                        }else if(data[i].category=='WSD'){
+                          console.log('풍속 : ',data[i].obsrValue);
+                          var wind_speed = data[i].obsrValue;
+                        }
+                        const present_wind = document.getElementById('present_wind');
+                present_wind.innerText = wind_direction + '풍 '+wind_speed +'m/s';
+
+                const weather_icon = document.getElementById('weather_icon');
+                weather_icon.setAttribute('src', img_src);
+                      }}
+              )
+    }).then(data => {
+      var tmFc;
+      if(date.getHours()<=6){
+        tmFc = base_date-1
+        tmFc = tmFc + '0600';
+      }else{
+        tmFc = base_date+'0600';
+      }
+      console.log(tmFc);
+
+      var midterm_temparature = 'https://apis.data.go.kr/1360000/MidFcstInfoService/getMidTa?serviceKey='+ServiceKey+'&pageNo=1&numOfRows=10&dataType=JSON&regId='+region_id+'&tmFc='+tmFc;
+
+      fetch(midterm_temparature).then(res => res.json())
+              .then(data => data.response.body.items.item[0])
+              .then(data => {
+                Object.keys(data).forEach(function (k){
+                  var date_num;
+                  var now = new Date();
+                  var new_date;
+                  if(k.includes('taMin') && !k.includes('Low') && !k.includes('High')){
+                    date_num = k.split('n')[1];
+                    const daily_weather_div = document.getElementById(date_num+'_weather');
+
+                    if(daily_weather_div==null){
+                      const new_div = document.createElement('div');
+                      new_div.setAttribute('id', date_num+'_weather')
+                      weekly_weather_container.appendChild(new_div);
+
+                      new_date = new Date(now.setDate(now.getDate()+parseInt(date_num)));
+
+                      const new_date_div = document.createElement('div');
+                      new_date_div.setAttribute('class', 'date_info');
+
+                      new_date_div.innerText = new_date.getMonth()+1 +'월 '+ new_date.getDate()+'일'
+                      new_div.appendChild(new_date_div)
+
+                      const new_min_div = document.createElement('div');
+                      new_min_div.setAttribute('id', k);
+                      new_min_div.innerText = data[k];
+                      new_div.appendChild(new_min_div);
+                    }else{
+                      const new_min_div = document.createElement('div');
+                      new_min_div.setAttribute('id', k);
+                      new_min_div.innerText = data[k];
+                      daily_weather_div.appendChild(new_min_div)
+                    }
+                    }
+                  else if(k.includes('taMax') && !k.includes('Low') && !k.includes('High')){
+                    date_num = k.split('x')[1];
+                    const daily_weather_div = document.getElementById(date_num+'_weather');
+                    if(daily_weather_div==null){
+                      const new_div = document.createElement('div');
+                      new_div.setAttribute('id', date_num+'_weather')
+                      weekly_weather_container.appendChild(new_div);
+
+                      const new_date_div = document.createElement('div');
+                      new_date_div.setAttribute('class', 'date_info');
+                      new_date = new Date(now.setDate(now.getDate()+parseInt(date_num)));
+                      new_date_div.innerText = new_date.getMonth()+1 +'월 '+ new_date.getDate()+'일'
+                      new_div.appendChild(new_date_div)
+
+                      const new_max_div = document.createElement('div');
+                      new_max_div.setAttribute('id', k);
+                      new_max_div.innerText = data[k];
+                      new_div.appendChild(new_max_div);
+                    }else{
+                      const new_max_div = document.createElement('div');
+                      new_max_div.setAttribute('id', k);
+                      new_max_div.innerText = data[k];
+                      daily_weather_div.appendChild(new_max_div);
+                    }
+                  }
+
+                })
+
+                      }
+              )
+
+    })
+
+
+
+
+
+
+
+    // function check_region(){
+    //   fetch("/check_region", {
+    //     method: "POST",
+    //     headers: {"Content-Type": "application/json",},
+    //     body: JSON.stringify(region_req),
+    //   })
+    //           .then(res => res.json())
+    //           .then(res => {
+    //                     nx = res.nx;
+    //                     ny = res.ny;
+    //                   }
+    //           )
+    //   return [nx, ny];
+    // }
+
+
+    //
+    // fetch("/check_region", {
+    //   method: "POST",
+    //   headers: {"Content-Type": "application/json",},
+    //   body: JSON.stringify(region_req),
+    // })
+    //         .then(res => res.json())
+    //         .then(res => {
+    //                   nx = res.nx;
+    //                   ny = res.ny;
+    //                 }
+    //         )
+    // function check_region(){
+    //   fetch("check_region", {
+    //     method: "POST",
+    //     headers: {"Content-Type": "application/json",},
+    //     body: JSON.stringify(region_req),
+    //   })
+
+    //
+    //
+    //
+    // navigator.geolocation.getCurrentPosition(function (position){
+    //
+    //   var latitude = position.coords.latitude;
+    //   var longitude = position.coords.longitude;
+    //
+    //   console.log(region_req);
+    //
+    //
+    //   fetch("/check_region", {
+    //     method: "POST",
+    //     headers: {"Content-Type": "application/json",},
+    //     body: JSON.stringify(region_req),
+    //   })
+    //           .then(res => res.json())
+    //           .then(res => {
+    //               nx = res.nx;
+    //               ny = res.ny;
+    //                   }
+    //           )
+
+
+
+
+
+
+
+
+
+      // console.log(current_weather_req);
+
+
+
+
+
+    // });
+
+
+
+
+  </script>
+
+
+
+  </body>
+</html>
