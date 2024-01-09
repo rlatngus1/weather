@@ -93,15 +93,14 @@
 
       return await res.json();
 
-      // return res;
     }
 
     check_region().then(res => {
+
       nx = res.nx;
       ny = res.ny;
-
-      console.log(res.region_id);
       region_id = res.region_id;
+      region_data2 = res.region_data2
       var region = res.시 +' '+ res.구 + ' '+ res.지역명;
       const present_location = document.getElementById('present_location');
       present_location.innerText = region;
@@ -197,74 +196,70 @@
 
                 const weather_icon = document.getElementById('weather_icon');
                 weather_icon.setAttribute('src', img_src);
-                      }}
-              )
-    }).then(data => {
+                      }})})
+              .then(data => {
       var tmFc;
-      if(date.getHours()<=6){
-        tmFc = base_date-1
+      if (date.getHours() <= 6) {
+        tmFc = base_date - 1
         tmFc = tmFc + '0600';
-      }else{
-        tmFc = base_date+'0600';
+      } else {
+        tmFc = base_date + '0600';
       }
-      console.log(tmFc);
 
-      var midterm_temparature = 'https://apis.data.go.kr/1360000/MidFcstInfoService/getMidTa?serviceKey='+ServiceKey+'&pageNo=1&numOfRows=10&dataType=JSON&regId='+region_id+'&tmFc='+tmFc;
+      var midterm_temparature = 'https://apis.data.go.kr/1360000/MidFcstInfoService/getMidTa?serviceKey=' + ServiceKey + '&pageNo=1&numOfRows=10&dataType=JSON&regId=' + region_id + '&tmFc=' + tmFc;
 
       fetch(midterm_temparature).then(res => res.json())
               .then(data => data.response.body.items.item[0])
               .then(data => {
-                Object.keys(data).forEach(function (k){
+                Object.keys(data).forEach(function (k) {
                   var date_num;
                   var now = new Date();
                   var new_date;
-                  if(k.includes('taMin') && !k.includes('Low') && !k.includes('High')){
+                  if (k.includes('taMin') && !k.includes('Low') && !k.includes('High')) {
                     date_num = k.split('n')[1];
-                    const daily_weather_div = document.getElementById(date_num+'_weather');
+                    const daily_weather_div = document.getElementById(date_num + '_weather');
 
-                    if(daily_weather_div==null){
+                    if (daily_weather_div == null) {
                       const new_div = document.createElement('div');
-                      new_div.setAttribute('id', date_num+'_weather')
+                      new_div.setAttribute('id', date_num + '_weather')
                       weekly_weather_container.appendChild(new_div);
 
-                      new_date = new Date(now.setDate(now.getDate()+parseInt(date_num)));
+                      new_date = new Date(now.setDate(now.getDate() + parseInt(date_num)));
 
                       const new_date_div = document.createElement('div');
                       new_date_div.setAttribute('class', 'date_info');
-
-                      new_date_div.innerText = new_date.getMonth()+1 +'월 '+ new_date.getDate()+'일'
+                      new_date_div.innerText = new_date.getMonth() + 1 + '월 ' + new_date.getDate() + '일'
                       new_div.appendChild(new_date_div)
 
                       const new_min_div = document.createElement('div');
                       new_min_div.setAttribute('id', k);
                       new_min_div.innerText = data[k];
                       new_div.appendChild(new_min_div);
-                    }else{
+                    } else {
                       const new_min_div = document.createElement('div');
                       new_min_div.setAttribute('id', k);
                       new_min_div.innerText = data[k];
                       daily_weather_div.appendChild(new_min_div)
                     }
-                    }
-                  else if(k.includes('taMax') && !k.includes('Low') && !k.includes('High')){
+                  } else if (k.includes('taMax') && !k.includes('Low') && !k.includes('High')) {
                     date_num = k.split('x')[1];
-                    const daily_weather_div = document.getElementById(date_num+'_weather');
-                    if(daily_weather_div==null){
+                    const daily_weather_div = document.getElementById(date_num + '_weather');
+                    if (daily_weather_div == null) {
                       const new_div = document.createElement('div');
-                      new_div.setAttribute('id', date_num+'_weather')
+                      new_div.setAttribute('id', date_num + '_weather')
                       weekly_weather_container.appendChild(new_div);
 
                       const new_date_div = document.createElement('div');
                       new_date_div.setAttribute('class', 'date_info');
-                      new_date = new Date(now.setDate(now.getDate()+parseInt(date_num)));
-                      new_date_div.innerText = new_date.getMonth()+1 +'월 '+ new_date.getDate()+'일'
+                      new_date = new Date(now.setDate(now.getDate() + parseInt(date_num)));
+                      new_date_div.innerText = new_date.getMonth() + 1 + '월 ' + new_date.getDate() + '일'
                       new_div.appendChild(new_date_div)
 
                       const new_max_div = document.createElement('div');
                       new_max_div.setAttribute('id', k);
                       new_max_div.innerText = data[k];
                       new_div.appendChild(new_max_div);
-                    }else{
+                    } else {
                       const new_max_div = document.createElement('div');
                       new_max_div.setAttribute('id', k);
                       new_max_div.innerText = data[k];
@@ -274,92 +269,52 @@
 
                 })
 
-                      }
-              )
+              })
 
-    })
+              var midterm_status_req = 'https://apis.data.go.kr/1360000/MidFcstInfoService/getMidLandFcst?serviceKey=' + ServiceKey + '&pageNo=1&numOfRows=10&dataType=JSON&regId=' + region_data2 + '&tmFc=' + tmFc;
 
+              fetch(midterm_status_req).then(res => res.json()).then(res => res.response.body.items.item).then(res => res[0])
+                      .then(data => {
+                        Object.keys(data).forEach(function (k){
 
+                          if(k.includes('wf')){
+                            var date_num = k.split('f')[1][0]
 
+                            if(k.includes('Am') || k.includes('Pm')){
+                              if(document.getElementById(date_num + '_weather') == null){
+                                const new_div = document.createElement('div');
+                                new_div.setAttribute('id', date_num + '_weather')
+                                weekly_weather_container.appendChild(new_div);
+                              }
 
+                              const daily_weather_div = document.getElementById(date_num + '_weather');
+                              const new_div = document.createElement('div');
+                              new_div.setAttribute('id', k);
+                              daily_weather_div.appendChild(new_div);
 
+                              const weather_icon = document.createElement('img');
+                              var img_src = '/images/icons/'
+                              if(data[k]=='맑음'){
+                                img_src = img_src + 'sunny.png'
+                              }else if(data[k]=='흐림'){
+                                img_src = img_src + 'sun_cloud.png'
+                              }else if(data[k]=='흐리고 비/눈'){
+                                img_src = img_src + 'rain_snow.png'
+                              }
+                              weather_icon.setAttribute('src', img_src);
+                              new_div.appendChild(weather_icon);
+                            }
 
+                          }
 
-    // function check_region(){
-    //   fetch("/check_region", {
-    //     method: "POST",
-    //     headers: {"Content-Type": "application/json",},
-    //     body: JSON.stringify(region_req),
-    //   })
-    //           .then(res => res.json())
-    //           .then(res => {
-    //                     nx = res.nx;
-    //                     ny = res.ny;
-    //                   }
-    //           )
-    //   return [nx, ny];
-    // }
-
-
-    //
-    // fetch("/check_region", {
-    //   method: "POST",
-    //   headers: {"Content-Type": "application/json",},
-    //   body: JSON.stringify(region_req),
-    // })
-    //         .then(res => res.json())
-    //         .then(res => {
-    //                   nx = res.nx;
-    //                   ny = res.ny;
-    //                 }
-    //         )
-    // function check_region(){
-    //   fetch("check_region", {
-    //     method: "POST",
-    //     headers: {"Content-Type": "application/json",},
-    //     body: JSON.stringify(region_req),
-    //   })
-
-    //
-    //
-    //
-    // navigator.geolocation.getCurrentPosition(function (position){
-    //
-    //   var latitude = position.coords.latitude;
-    //   var longitude = position.coords.longitude;
-    //
-    //   console.log(region_req);
-    //
-    //
-    //   fetch("/check_region", {
-    //     method: "POST",
-    //     headers: {"Content-Type": "application/json",},
-    //     body: JSON.stringify(region_req),
-    //   })
-    //           .then(res => res.json())
-    //           .then(res => {
-    //               nx = res.nx;
-    //               ny = res.ny;
-    //                   }
-    //           )
+                        })
+                      })
 
 
+    }
 
 
-
-
-
-
-
-      // console.log(current_weather_req);
-
-
-
-
-
-    // });
-
-
+    )
 
 
   </script>
@@ -367,4 +322,11 @@
 
 
   </body>
+
+<footer id="footer">
+  <div id="source_info">
+    이미지 출처 : https://www.flaticon.com/kr/free-icons/ <br>
+    날씨 정보 출처 : 기상청
+  </div>
+</footer>
 </html>

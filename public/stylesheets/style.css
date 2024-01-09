@@ -116,7 +116,33 @@ body {
       left: 5%;
 
     }
+    >[id*='Am']{
+      top: 15%;
+      height: 70%;
+      width: 10%;
+      left: 50%;
+      display: flex;
+
+    }
+    >[id*='Pm']{
+      top: 15%;
+      height: 70%;
+      width: 10%;
+      left: 60%;
+      display: flex;
+    }
 
   }
 
+}
+
+
+#footer{
+  margin-top: 5vh;
+  display: flex;
+  justify-content: end;
+  font-size: 10px;
+  width: 100vw;
+  position: sticky;
+  bottom: 0;
 }
